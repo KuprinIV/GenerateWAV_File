@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QSettings>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -110,6 +111,8 @@ void MainWindow::on_filePlayTimeLE_textChanged(const QString &arg1)
 
 void MainWindow::on_generateFileBtn_clicked()
 {
+    QSettings settings(QApplication::applicationDirPath() + "/default_path.ini", QSettings::IniFormat);
+    QString directoryPath = settings.value("last_saved_file_directory", "C:").toString();
     // check parameters
     if(signalFreq == -1)
     {
@@ -150,12 +153,16 @@ void MainWindow::on_generateFileBtn_clicked()
     }
     // set out file location
     QString defaultFileName = getDefaultFileName(signalType, signalFreq);
-    QString file_path = QFileDialog::getSaveFileName(this, tr("Save File"), defaultFileName, tr("Audio files (*.wav )"));
+    QString file_path = QFileDialog::getSaveFileName(this, tr("Save File"), directoryPath + '/' + defaultFileName, tr("Audio files (*.wav )"));
     if(file_path.isEmpty())
     {
         QMessageBox::warning(this, tr("Error"), tr("Output file name is incorrect"));
         return;
     }
+    directoryPath = file_path;
+    directoryPath.truncate(directoryPath.lastIndexOf('/')); // trim file name, store only directory path
+    settings.setValue("last_saved_file_directory", directoryPath);
+
     createWavFileObj = new CreateWavFile(file_path);
     createFileThread = new CreateFileThread();
 
